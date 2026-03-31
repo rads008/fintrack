@@ -1,11 +1,26 @@
 # Use lightweight Java image
-FROM eclipse-temurin:17-jdk-jammy
+# ---------- BUILD STAGE ----------
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
-# Set working directory inside container
 WORKDIR /app
 
-# Copy jar file
-COPY target/fintrack-0.0.1-SNAPSHOT.jar app.jar
+# Copy everything
+COPY . .
 
-# Run the app
+# Give permission to mvnw
+RUN chmod +x mvnw
+
+# Build jar (skip tests 🔥)
+RUN ./mvnw clean package -DskipTests
+
+
+# ---------- RUN STAGE ----------
+FROM eclipse-temurin:17-jdk-jammy
+
+WORKDIR /app
+
+# Copy jar from builder
+COPY --from=builder /app/target/*.jar app.jar
+
+# Run app
 ENTRYPOINT ["java", "-jar", "app.jar"]
